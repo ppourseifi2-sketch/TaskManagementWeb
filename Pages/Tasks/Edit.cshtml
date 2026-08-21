@@ -1,0 +1,41 @@
+@page
+@model TaskManagementWeb.Pages.Tasks.EditModel
+
+<h2>@(Model.TaskId == null ? "تسک جدید" : "ویرایش تسک")</h2>
+
+<form method="post">
+    <input type="hidden" asp-for="ProjectId" />
+    <input type="hidden" asp-for="TaskId" />
+
+    <div>
+        <label>عنوان:</label>
+        <input asp-for="Title" />
+    </div>
+
+    <div>
+        <label>توضیحات:</label>
+        <textarea asp-for="Description"></textarea>
+    </div>
+
+    <div>
+        <label>وضعیت:</label>
+        <select asp-for="Status">
+            <option value="To Do">To Do</option>
+            <option value="In Progress">In Progress</option>
+            <option value="Done">Done</option>
+        </select>
+    </div>
+
+    <div>
+        <label>مسئول:</label>
+        <select asp-for="AssignedUserId">
+            <option value="">(بدون تخصیص)</option>
+            @foreach (var u in Model.ProjectUsers)
+            {
+                <option value="@u.Id">@u.Name</option>
+            }
+        </select>
+    </div>
+
+    <button type="submit">ذخیره</button>
+</form>

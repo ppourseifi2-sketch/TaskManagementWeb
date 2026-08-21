@@ -1,0 +1,21 @@
+@page
+@model TaskManagementWeb.Pages.LoginModel
+
+<h2>ورود</h2>
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <p style="color:red">@Model.ErrorMessage</p>
+}
+
+<form method="post">
+    <div>
+        <label>نام کاربری:</label>
+        <input asp-for="Username" />
+    </div>
+    <div>
+        <label>رمز عبور:</label>
+        <input asp-for="Password" type="password" />
+    </div>
+    <button type="submit">ورود</button>
+</form>

@@ -1,0 +1,59 @@
+@page
+@model TaskManagementWeb.Pages.Tasks.IndexModel
+
+<a href="/Projects/Index">&larr; بازگشت به پروژه‌ها</a>
+
+<h2>@Model.ProjectTitle</h2>
+<p>نقش شما: @Model.MyRole</p>
+
+<form method="get">
+    <input type="hidden" name="projectId" value="@Model.ProjectId" />
+    <label>فیلتر وضعیت:</label>
+    <select name="statusFilter">
+        <option value="">همه</option>
+        <option value="To Do" selected="@(Model.StatusFilter == "To Do")">To Do</option>
+        <option value="In Progress" selected="@(Model.StatusFilter == "In Progress")">In Progress</option>
+        <option value="Done" selected="@(Model.StatusFilter == "Done")">Done</option>
+    </select>
+    <button type="submit">اعمال فیلتر</button>
+</form>
+
+@if (Model.MyRole == "Owner" || Model.MyRole == "Admin")
+{
+    <p><a href="/Tasks/Edit?projectId=@Model.ProjectId">+ تسک جدید</a></p>
+}
+
+@if (Model.MyRole == "Owner")
+{
+    <p><a href="/Members/Index?projectId=@Model.ProjectId">مدیریت اعضا</a></p>
+}
+
+<table border="1" cellpadding="8">
+    <tr>
+        <th>عنوان</th>
+        <th>وضعیت</th>
+        <th>مسئول</th>
+        <th></th>
+    </tr>
+
+    @foreach (var t in Model.TaskRows)
+    {
+        <tr>
+            <td>@t.Title</td>
+            <td>@t.Status</td>
+            <td>@t.AssignedUserName</td>
+            <td>
+                @if (Model.MyRole == "Owner" || Model.MyRole == "Admin")
+                {
+                    <a href="/Tasks/Edit?projectId=@Model.ProjectId&id=@t.Id">ویرایش</a>
+
+                    <form method="post" asp-page-handler="Delete" style="display:inline">
+                        <input type="hidden" name="projectId" value="@Model.ProjectId" />
+                        <input type="hidden" name="taskId" value="@t.Id" />
+                        <button type="submit">حذف</button>
+                    </form>
+                }
+            </td>
+        </tr>
+    }
+</table>

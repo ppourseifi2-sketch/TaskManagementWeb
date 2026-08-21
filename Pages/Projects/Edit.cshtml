@@ -1,0 +1,18 @@
+@page
+@model TaskManagementWeb.Pages.Projects.EditModel
+
+<h2>ویرایش پروژه</h2>
+
+<form method="post">
+    <input type="hidden" name="projectId" value="@Model.ProjectId" />
+
+    <div>
+        <label>عنوان:</label>
+        <input type="text" name="title" value="@Model.Title" />
+    </div>
+    <div>
+        <label>توضیحات:</label>
+        <textarea name="description">@Model.Description</textarea>
+    </div>
+    <button type="submit">ذخیره</button>
+</form>
