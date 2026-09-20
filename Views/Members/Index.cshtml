@@ -1,0 +1,47 @@
+@model List<TaskManagementWeb.Models.MemberRow>
+
+@{
+    ViewBag.Title = "مدیریت اعضا";
+}
+
+<a href="/Tasks/Index/@ViewBag.ProjectId">&larr; بازگشت به پروژه</a>
+
+<h2>مدیریت اعضا</h2>
+
+<p><a href="/Members/Add/@ViewBag.ProjectId">+ افزودن عضو</a></p>
+
+<table border="1" cellpadding="8">
+    <tr>
+        <th>نام</th>
+        <th>نقش فعلی</th>
+        <th>تغییر نقش</th>
+        <th>حذف</th>
+    </tr>
+
+    @foreach (var m in Model)
+    {
+        <tr>
+            <td>@m.UserName</td>
+            <td>@m.Role</td>
+            <td>
+                <form method="post" action="/Members/ChangeRole">
+                    <input type="hidden" name="projectId" value="@ViewBag.ProjectId" />
+                    <input type="hidden" name="memberId" value="@m.MemberId" />
+                    <select name="newRole">
+                        <option value="Member">Member</option>
+                        <option value="Admin">Admin</option>
+                        <option value="Owner">Owner</option>
+                    </select>
+                    <button type="submit">اعمال</button>
+                </form>
+            </td>
+            <td>
+                <form method="post" action="/Members/Remove">
+                    <input type="hidden" name="projectId" value="@ViewBag.ProjectId" />
+                    <input type="hidden" name="memberId" value="@m.MemberId" />
+                    <button type="submit">حذف</button>
+                </form>
+            </td>
+        </tr>
+    }
+</table>

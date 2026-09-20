@@ -1,0 +1,22 @@
+@{
+    ViewBag.Title = "ورود";
+}
+
+<h2>ورود</h2>
+
+@if (ViewBag.ErrorMessage != null)
+{
+    <p style="color:red">@ViewBag.ErrorMessage</p>
+}
+
+<form method="post">
+    <div>
+        <label>نام کاربری:</label>
+        <input type="text" name="username" />
+    </div>
+    <div>
+        <label>رمز عبور:</label>
+        <input type="password" name="password" />
+    </div>
+    <button type="submit">ورود</button>
+</form>

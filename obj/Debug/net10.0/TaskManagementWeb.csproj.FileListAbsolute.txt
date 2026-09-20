@@ -18,9 +18,7 @@ C:\Users\parham\Desktop\My projects\TaskManagementWeb\obj\Debug\net10.0\TaskMana
 C:\Users\parham\Desktop\My projects\TaskManagementWeb\obj\Debug\net10.0\rjimswa.dswa.cache.json
 C:\Users\parham\Desktop\My projects\TaskManagementWeb\obj\Debug\net10.0\rjsmrazor.dswa.cache.json
 C:\Users\parham\Desktop\My projects\TaskManagementWeb\obj\Debug\net10.0\rjsmcshtml.dswa.cache.json
-C:\Users\parham\Desktop\My projects\TaskManagementWeb\obj\Debug\net10.0\scopedcss\Pages\Shared\_Layout.cshtml.rz.scp.css
 C:\Users\parham\Desktop\My projects\TaskManagementWeb\obj\Debug\net10.0\scopedcss\bundle\TaskManagementWeb.styles.css
-C:\Users\parham\Desktop\My projects\TaskManagementWeb\obj\Debug\net10.0\scopedcss\projectbundle\TaskManagementWeb.bundle.scp.css
 C:\Users\parham\Desktop\My projects\TaskManagementWeb\obj\Debug\net10.0\compressed\e9odosx555-{0}-61n19gt1b8-61n19gt1b8.gz
 C:\Users\parham\Desktop\My projects\TaskManagementWeb\obj\Debug\net10.0\compressed\ts63kl5dw6-{0}-xtxxf3hu2r-xtxxf3hu2r.gz
 C:\Users\parham\Desktop\My projects\TaskManagementWeb\obj\Debug\net10.0\compressed\qt8ybafgh2-{0}-bqjiyaj88i-bqjiyaj88i.gz
@@ -82,8 +80,6 @@ C:\Users\parham\Desktop\My projects\TaskManagementWeb\obj\Debug\net10.0\compress
 C:\Users\parham\Desktop\My projects\TaskManagementWeb\obj\Debug\net10.0\compressed\eijughewo0-{0}-muycvpuwrr-muycvpuwrr.gz
 C:\Users\parham\Desktop\My projects\TaskManagementWeb\obj\Debug\net10.0\compressed\bvuvj95e6g-{0}-87fc7y1x7t-87fc7y1x7t.gz
 C:\Users\parham\Desktop\My projects\TaskManagementWeb\obj\Debug\net10.0\compressed\a6na0skrwi-{0}-mlv21k5csn-mlv21k5csn.gz
-C:\Users\parham\Desktop\My projects\TaskManagementWeb\obj\Debug\net10.0\compressed\kjk3xi01h3-{0}-voedhk91jw-voedhk91jw.gz
-C:\Users\parham\Desktop\My projects\TaskManagementWeb\obj\Debug\net10.0\compressed\yemzzvhzkf-{0}-voedhk91jw-voedhk91jw.gz
 C:\Users\parham\Desktop\My projects\TaskManagementWeb\obj\Debug\net10.0\staticwebassets.build.json
 C:\Users\parham\Desktop\My projects\TaskManagementWeb\obj\Debug\net10.0\staticwebassets.build.json.cache
 C:\Users\parham\Desktop\My projects\TaskManagementWeb\obj\Debug\net10.0\staticwebassets.development.json
@@ -145,3 +141,4 @@ C:\Users\parham\Desktop\My projects\TaskManagementWeb\bin\Debug\net10.0\runtimes
 C:\Users\parham\Desktop\My projects\TaskManagementWeb\obj\Debug\net10.0\TaskManagementWeb.csproj.AssemblyReference.cache
 C:\Users\parham\Desktop\My projects\TaskManagementWeb\obj\Debug\net10.0\TaskMana.72646EF3.Up2Date
 C:\Users\parham\Desktop\My projects\TaskManagementWeb\obj\Debug\net10.0\compressed\3tpfyw4a4o-{0}-35lzpb136e-35lzpb136e.gz
+C:\Users\parham\Desktop\My projects\TaskManagementWeb\obj\Debug\net10.0\TaskManagementWeb.sourcelink.json

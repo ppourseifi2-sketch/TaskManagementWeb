@@ -1,0 +1,44 @@
+@model TaskManagementWeb.Models.ProjectTask
+
+@{
+    ViewBag.Title = "تسک";
+}
+
+<h2>@(Model.Id == 0 ? "تسک جدید" : "ویرایش تسک")</h2>
+
+<form method="post">
+    <input type="hidden" name="projectId" value="@ViewBag.ProjectId" />
+    <input type="hidden" name="taskId" value="@(Model.Id == 0 ? "" : Model.Id.ToString())" />
+
+    <div>
+        <label>عنوان:</label>
+        <input type="text" name="title" value="@Model.Title" />
+    </div>
+
+    <div>
+        <label>توضیحات:</label>
+        <textarea name="description">@Model.Description</textarea>
+    </div>
+
+    <div>
+        <label>وضعیت:</label>
+        <select name="status">
+            <option value="To Do" selected="@(Model.Status == "To Do")">To Do</option>
+            <option value="In Progress" selected="@(Model.Status == "In Progress")">In Progress</option>
+            <option value="Done" selected="@(Model.Status == "Done")">Done</option>
+        </select>
+    </div>
+
+    <div>
+        <label>مسئول:</label>
+        <select name="assignedUserId">
+            <option value="">(بدون تخصیص)</option>
+            @foreach (var u in (List<TaskManagementWeb.Models.Users>)ViewBag.ProjectUsers)
+            {
+                <option value="@u.Id" selected="@(Model.AssignedUserId == u.Id)">@u.Name</option>
+            }
+        </select>
+    </div>
+
+    <button type="submit">ذخیره</button>
+</form>

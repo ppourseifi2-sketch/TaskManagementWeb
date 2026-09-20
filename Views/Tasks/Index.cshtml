@@ -1,0 +1,61 @@
+@model List<TaskManagementWeb.Models.TaskRow>
+
+@{
+    ViewBag.Title = "تسک‌ها";
+}
+
+<a href="/Projects/Index">&larr; بازگشت به پروژه‌ها</a>
+
+<h2>@ViewBag.ProjectTitle</h2>
+<p>نقش شما: @ViewBag.MyRole</p>
+
+<form method="get">
+    <label>فیلتر وضعیت:</label>
+    <select name="statusFilter">
+        <option value="">همه</option>
+        <option value="To Do" selected="@(ViewBag.StatusFilter == "To Do")">To Do</option>
+        <option value="In Progress" selected="@(ViewBag.StatusFilter == "In Progress")">In Progress</option>
+        <option value="Done" selected="@(ViewBag.StatusFilter == "Done")">Done</option>
+    </select>
+    <button type="submit">اعمال فیلتر</button>
+</form>
+
+@if (ViewBag.MyRole == "Owner" || ViewBag.MyRole == "Admin")
+{
+    <p><a href="/Tasks/Edit?projectId=@ViewBag.ProjectId">+ تسک جدید</a></p>
+}
+
+@if (ViewBag.MyRole == "Owner")
+{
+    <p><a href="/Members/Index/@ViewBag.ProjectId">مدیریت اعضا</a></p>
+}
+
+<table border="1" cellpadding="8">
+    <tr>
+        <th>عنوان</th>
+        <th>وضعیت</th>
+        <th>مسئول</th>
+        <th></th>
+    </tr>
+
+    @foreach (var t in Model)
+    {
+        <tr>
+            <td>@t.Title</td>
+            <td>@t.Status</td>
+            <td>@t.AssignedUserName</td>
+            <td>
+                @if (ViewBag.MyRole == "Owner" || ViewBag.MyRole == "Admin")
+                {
+                    <a href="/Tasks/Edit?projectId=@ViewBag.ProjectId&id=@t.Id">ویرایش</a>
+
+                    <form method="post" action="/Tasks/Delete" style="display:inline">
+                        <input type="hidden" name="projectId" value="@ViewBag.ProjectId" />
+                        <input type="hidden" name="taskId" value="@t.Id" />
+                        <button type="submit">حذف</button>
+                    </form>
+                }
+            </td>
+        </tr>
+    }
+</table>

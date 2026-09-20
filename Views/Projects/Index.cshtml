@@ -1,0 +1,34 @@
+@model List<TaskManagementWeb.Models.ProjectRow>
+
+@{
+    ViewBag.Title = "پروژه‌های من";
+}
+
+<h2>پروژه‌های من</h2>
+
+<p><a href="/Projects/Create">+ پروژه جدید</a></p>
+
+<table border="1" cellpadding="8">
+    <tr>
+        <th>عنوان</th>
+        <th>توضیحات</th>
+        <th>نقش من</th>
+        <th></th>
+    </tr>
+
+    @foreach (var p in Model)
+    {
+        <tr>
+            <td>@p.Title</td>
+            <td>@p.Description</td>
+            <td>@p.Role</td>
+            <td>
+                @if (p.Role == "Owner")
+                {
+                    <a href="/Projects/Edit/@p.Id">ویرایش</a>
+                }
+                <a href="/Tasks/Index/@p.Id">ورود به پروژه</a>
+            </td>
+        </tr>
+    }
+</table>
