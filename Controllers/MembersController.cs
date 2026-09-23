@@ -1,11 +1,14 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TaskManagementWeb.Data;
 using TaskManagementWeb.Models;
 
 namespace TaskManagementWeb.Controllers
 {
+    [Authorize]
     public class MembersController : Controller
     {
         private readonly AppDbContext _db;
@@ -17,11 +20,7 @@ namespace TaskManagementWeb.Controllers
 
         public IActionResult Index(int id)
         {
-            var userId = HttpContext.Session.GetInt32("UserId");
-            if (userId == null)
-            {
-                return RedirectToAction("Login", "Account");
-            }
+            int userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
 
             var myMembership = _db.ProjectMembers.FirstOrDefault(m => m.ProjectId == id && m.UserId == userId);
 
@@ -45,19 +44,17 @@ namespace TaskManagementWeb.Controllers
                 rows.Add(row);
             }
 
-            ViewBag.ProjectId = id;
+            var viewModel = new MembersIndexViewModel();
+            viewModel.ProjectId = id;
+            viewModel.Members = rows;
 
-            return View(rows);
+            return View(viewModel);
         }
 
         [HttpPost]
         public IActionResult ChangeRole(int projectId, int memberId, string newRole)
         {
-            var userId = HttpContext.Session.GetInt32("UserId");
-            if (userId == null)
-            {
-                return RedirectToAction("Login", "Account");
-            }
+            int userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
 
             var myMembership = _db.ProjectMembers.FirstOrDefault(m => m.ProjectId == projectId && m.UserId == userId);
 
@@ -76,11 +73,7 @@ namespace TaskManagementWeb.Controllers
         [HttpPost]
         public IActionResult Remove(int projectId, int memberId)
         {
-            var userId = HttpContext.Session.GetInt32("UserId");
-            if (userId == null)
-            {
-                return RedirectToAction("Login", "Account");
-            }
+            int userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
 
             var myMembership = _db.ProjectMembers.FirstOrDefault(m => m.ProjectId == projectId && m.UserId == userId);
 
@@ -98,11 +91,7 @@ namespace TaskManagementWeb.Controllers
 
         public IActionResult Add(int id)
         {
-            var userId = HttpContext.Session.GetInt32("UserId");
-            if (userId == null)
-            {
-                return RedirectToAction("Login", "Account");
-            }
+            int userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
 
             var myMembership = _db.ProjectMembers.FirstOrDefault(m => m.ProjectId == id && m.UserId == userId);
 
@@ -130,20 +119,17 @@ namespace TaskManagementWeb.Controllers
                 }
             }
 
-            ViewBag.ProjectId = id;
-            ViewBag.AvailableUsers = availableUsers;
+            var viewModel = new MembersAddViewModel();
+            viewModel.ProjectId = id;
+            viewModel.AvailableUsers = availableUsers;
 
-            return View();
+            return View(viewModel);
         }
 
         [HttpPost]
         public IActionResult Add(int projectId, int userId, string role)
         {
-            var currentUserId = HttpContext.Session.GetInt32("UserId");
-            if (currentUserId == null)
-            {
-                return RedirectToAction("Login", "Account");
-            }
+            int currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
 
             var myMembership = _db.ProjectMembers.FirstOrDefault(m => m.ProjectId == projectId && m.UserId == currentUserId);
 

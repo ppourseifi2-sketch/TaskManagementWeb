@@ -1,20 +1,18 @@
+using Microsoft.AspNetCore.Authorization;
+using TaskManagementWeb.Models;
 using Microsoft.AspNetCore.Mvc;
 
 namespace TaskManagementWeb.Controllers
 {
+    [Authorize]
     public class HomeController : Controller
     {
         public IActionResult Index()
         {
-            var userId = HttpContext.Session.GetInt32("UserId");
+            var viewModel = new HomeIndexViewModel();
+            viewModel.CurrentUserName = User.Identity.Name;
 
-            if (userId == null)
-            {
-                return RedirectToAction("Login", "Account");
-            }
-
-            ViewBag.CurrentUserName = HttpContext.Session.GetString("UserName");
-            return View();
+            return View(viewModel);
         }
     }
 }

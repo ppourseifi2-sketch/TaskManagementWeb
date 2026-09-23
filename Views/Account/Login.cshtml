@@ -18,5 +18,16 @@
         <label>رمز عبور:</label>
         <input type="password" name="password" />
     </div>
+
+    <div class="g-recaptcha" data-sitekey="@ViewBag.RecaptchaSiteKey"></div>
+
     <button type="submit">ورود</button>
 </form>
+
+<hr />
+
+<form method="post" asp-action="GoogleLogin">
+    <button type="submit">ورود با Google</button>
+</form>
+
+<script src="https://www.google.com/recaptcha/api.js" async defer></script>

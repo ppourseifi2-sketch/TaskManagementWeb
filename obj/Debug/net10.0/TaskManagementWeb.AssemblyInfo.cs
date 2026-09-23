@@ -10,10 +10,11 @@
 using System;
 using System.Reflection;
 
+[assembly: Microsoft.Extensions.Configuration.UserSecrets.UserSecretsIdAttribute("8ae63bab-b2c6-4435-bfe4-6b81a671003d")]
 [assembly: System.Reflection.AssemblyCompanyAttribute("TaskManagementWeb")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+825ef7ea71ece4ee8fc437d4249f4da22d99c9e6")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+121fac71635550350d95f23dd45c02fed19b9f41")]
 [assembly: System.Reflection.AssemblyProductAttribute("TaskManagementWeb")]
 [assembly: System.Reflection.AssemblyTitleAttribute("TaskManagementWeb")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

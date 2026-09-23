@@ -1,18 +1,20 @@
+@model TaskManagementWeb.Models.MembersAddViewModel
+
 @{
     ViewBag.Title = "افزودن عضو";
 }
 
-<a href="/Members/Index/@ViewBag.ProjectId">&larr; بازگشت به مدیریت اعضا</a>
+<a href="/Members/Index/@Model.ProjectId">&larr; بازگشت به مدیریت اعضا</a>
 
 <h2>افزودن عضو</h2>
 
 <form method="post">
-    <input type="hidden" name="projectId" value="@ViewBag.ProjectId" />
+    <input type="hidden" name="projectId" value="@Model.ProjectId" />
 
     <div>
         <label>کاربر:</label>
         <select name="userId">
-            @foreach (var u in (List<TaskManagementWeb.Models.Users>)ViewBag.AvailableUsers)
+            @foreach (var u in Model.AvailableUsers)
             {
                 <option value="@u.Id">@u.Name</option>
             }

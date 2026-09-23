@@ -8,6 +8,7 @@
     ".NETCoreApp,Version=v10.0": {
       "TaskManagementWeb/1.0.0": {
         "dependencies": {
+          "Microsoft.AspNetCore.Authentication.Google": "10.0.12",
           "Microsoft.EntityFrameworkCore.SqlServer": "10.0.11"
         },
         "runtime": {
@@ -37,6 +38,14 @@
           "lib/net8.0/Azure.Identity.dll": {
             "assemblyVersion": "1.17.1.0",
             "fileVersion": "1.1700.125.56903"
+          }
+        }
+      },
+      "Microsoft.AspNetCore.Authentication.Google/10.0.12": {
+        "runtime": {
+          "lib/net10.0/Microsoft.AspNetCore.Authentication.Google.dll": {
+            "assemblyVersion": "10.0.12.0",
+            "fileVersion": "10.0.1226.42308"
           }
         }
       },
@@ -402,6 +411,13 @@
       "sha512": "sha512-MSZkBrctcpiGxs9Cvr2VKKoN6qFLZlP3I6xuCWJ9iTgitI5Rgxtk5gfOSpXPZE3+CJmZ/mnqpQyGyjawFn5Vvg==",
       "path": "azure.identity/1.17.1",
       "hashPath": "azure.identity.1.17.1.nupkg.sha512"
+    },
+    "Microsoft.AspNetCore.Authentication.Google/10.0.12": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-CYQYHQaz2FSTu7ShfwOZWqxBUC8ykq2FQNOcm0jBMZ4PGcX0SgLtpIfRNnDz0AfGboZYtDnJkE0ambi34JtsrA==",
+      "path": "microsoft.aspnetcore.authentication.google/10.0.12",
+      "hashPath": "microsoft.aspnetcore.authentication.google.10.0.12.nupkg.sha512"
     },
     "Microsoft.Bcl.AsyncInterfaces/8.0.0": {
       "type": "package",

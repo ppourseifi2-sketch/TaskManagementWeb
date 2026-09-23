@@ -142,3 +142,4 @@ C:\Users\parham\Desktop\My projects\TaskManagementWeb\obj\Debug\net10.0\TaskMana
 C:\Users\parham\Desktop\My projects\TaskManagementWeb\obj\Debug\net10.0\TaskMana.72646EF3.Up2Date
 C:\Users\parham\Desktop\My projects\TaskManagementWeb\obj\Debug\net10.0\compressed\3tpfyw4a4o-{0}-35lzpb136e-35lzpb136e.gz
 C:\Users\parham\Desktop\My projects\TaskManagementWeb\obj\Debug\net10.0\TaskManagementWeb.sourcelink.json
+C:\Users\parham\Desktop\My projects\TaskManagementWeb\bin\Debug\net10.0\Microsoft.AspNetCore.Authentication.Google.dll
