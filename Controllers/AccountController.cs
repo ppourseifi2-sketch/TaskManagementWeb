@@ -1,25 +1,23 @@
 using System.Collections.Generic;
-using System.Linq;
-using System.Net.Http;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
-using TaskManagementWeb.Data;
 using TaskManagementWeb.Models;
+using TaskManagementWeb.Services;
 
 namespace TaskManagementWeb.Controllers
 {
     public class AccountController : Controller
     {
-        private readonly AppDbContext _db;
+        private readonly IAccountService _accountService;
         private readonly IConfiguration _config;
 
-        public AccountController(AppDbContext db, IConfiguration config)
+        public AccountController(IAccountService accountService, IConfiguration config)
         {
-            _db = db;
+            _accountService = accountService;
             _config = config;
         }
 
@@ -29,13 +27,13 @@ namespace TaskManagementWeb.Controllers
             return View();
         }
 
-       [HttpPost]
-public async System.Threading.Tasks.Task<IActionResult> Login(string username, string password)
-{
-    ViewBag.RecaptchaSiteKey = _config["Recaptcha:SiteKey"];
+        [HttpPost]
+        public async System.Threading.Tasks.Task<IActionResult> Login(string username, string password)
+        {
+            ViewBag.RecaptchaSiteKey = _config["Recaptcha:SiteKey"];
 
-    string captchaResponse = Request.Form["g-recaptcha-response"];
-    bool captchaIsValid = await VerifyCaptcha(captchaResponse);
+            string captchaResponse = Request.Form["g-recaptcha-response"];
+            bool captchaIsValid = await _accountService.VerifyCaptcha(captchaResponse);
 
             if (!captchaIsValid)
             {
@@ -43,7 +41,7 @@ public async System.Threading.Tasks.Task<IActionResult> Login(string username, s
                 return View();
             }
 
-            var user = _db.Users.FirstOrDefault(u => u.Username == username && u.Password == password);
+            var user = _accountService.ValidateUser(username, password);
 
             if (user == null)
             {
@@ -54,23 +52,6 @@ public async System.Threading.Tasks.Task<IActionResult> Login(string username, s
             await SignInUser(user);
 
             return RedirectToAction("Index", "Home");
-        }
-
-        private async System.Threading.Tasks.Task<bool> VerifyCaptcha(string response)
-        {
-            if (string.IsNullOrEmpty(response))
-            {
-                return false;
-            }
-
-            string secretKey = _config["Recaptcha:SecretKey"];
-
-            var client = new HttpClient();
-            string url = "https://www.google.com/recaptcha/api/siteverify?secret=" + secretKey + "&response=" + response;
-
-            var result = await client.GetStringAsync(url);
-        System.Console.WriteLine("Google response: " + result);
-            return result.Contains("\"success\": true") || result.Contains("\"success\":true");
         }
 
         [HttpPost]
@@ -94,18 +75,7 @@ public async System.Threading.Tasks.Task<IActionResult> Login(string username, s
             string email = result.Principal.FindFirst(ClaimTypes.Email).Value;
             string name = result.Principal.FindFirst(ClaimTypes.Name).Value;
 
-            var user = _db.Users.FirstOrDefault(u => u.Username == email);
-
-            if (user == null)
-            {
-                user = new Users();
-                user.Name = name;
-                user.Username = email;
-                user.Password = "GOOGLE_LOGIN";
-
-                _db.Users.Add(user);
-                _db.SaveChanges();
-            }
+            var user = _accountService.GetOrCreateGoogleUser(email, name);
 
             await SignInUser(user);
             await HttpContext.SignOutAsync("External");

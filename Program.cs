@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.EntityFrameworkCore;
 using TaskManagementWeb.Data;
+using TaskManagementWeb.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,6 +10,10 @@ builder.Services.AddControllersWithViews();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("AppDbConnection")));
+    builder.Services.AddScoped<IProjectService, ProjectService>();
+    builder.Services.AddScoped<ITaskService, TaskService>();
+    builder.Services.AddScoped<IMemberService, MemberService>();
+    builder.Services.AddScoped<IAccountService, AccountService>();
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
