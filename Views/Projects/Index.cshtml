@@ -29,6 +29,19 @@
                 }
                 <a href="/Tasks/Index/@p.Id">ورود به پروژه</a>
             </td>
+            <td>
+    @if (p.Role == "Owner")
+    {
+        <a href="/Projects/Edit/@p.Id">ویرایش</a>
+
+        <form method="post" action="/Projects/Delete" style="display:inline"
+              onsubmit="return confirm('با حذف پروژه، همه‌ی تسک‌ها و اعضای اون هم حذف می‌شن. مطمئنی؟');">
+            <input type="hidden" name="projectId" value="@p.Id" />
+            <button type="submit">حذف</button>
+        </form>
+    }
+    <a href="/Tasks/Index/@p.Id">ورود به پروژه</a>
+</td>
         </tr>
     }
 </table>

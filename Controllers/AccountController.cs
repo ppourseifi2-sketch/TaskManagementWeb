@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using System.Security.Claims;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
@@ -28,12 +30,12 @@ namespace TaskManagementWeb.Controllers
         }
 
         [HttpPost]
-        public async System.Threading.Tasks.Task<IActionResult> Login(string username, string password)
+        public async Task<IActionResult> Login(string username, string password, CancellationToken cancellationToken)
         {
             ViewBag.RecaptchaSiteKey = _config["Recaptcha:SiteKey"];
 
             string captchaResponse = Request.Form["g-recaptcha-response"];
-            bool captchaIsValid = await _accountService.VerifyCaptcha(captchaResponse);
+            bool captchaIsValid = await _accountService.VerifyCaptchaAsync(captchaResponse, cancellationToken);
 
             if (!captchaIsValid)
             {
@@ -41,7 +43,7 @@ namespace TaskManagementWeb.Controllers
                 return View();
             }
 
-            var user = _accountService.ValidateUser(username, password);
+            var user = await _accountService.ValidateUserAsync(username, password, cancellationToken);
 
             if (user == null)
             {
@@ -63,7 +65,7 @@ namespace TaskManagementWeb.Controllers
             return Challenge(properties, GoogleDefaults.AuthenticationScheme);
         }
 
-        public async System.Threading.Tasks.Task<IActionResult> GoogleResponse()
+        public async Task<IActionResult> GoogleResponse(CancellationToken cancellationToken)
         {
             var result = await HttpContext.AuthenticateAsync("External");
 
@@ -75,7 +77,7 @@ namespace TaskManagementWeb.Controllers
             string email = result.Principal.FindFirst(ClaimTypes.Email).Value;
             string name = result.Principal.FindFirst(ClaimTypes.Name).Value;
 
-            var user = _accountService.GetOrCreateGoogleUser(email, name);
+            var user = await _accountService.GetOrCreateGoogleUserAsync(email, name, cancellationToken);
 
             await SignInUser(user);
             await HttpContext.SignOutAsync("External");
@@ -83,13 +85,13 @@ namespace TaskManagementWeb.Controllers
             return RedirectToAction("Index", "Home");
         }
 
-        public async System.Threading.Tasks.Task<IActionResult> Logout()
+        public async Task<IActionResult> Logout()
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             return RedirectToAction("Login");
         }
 
-        private async System.Threading.Tasks.Task SignInUser(Users user)
+        private async Task SignInUser(Users user)
         {
             var claims = new List<Claim>();
             claims.Add(new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()));

@@ -1,6 +1,9 @@
-using System.Linq;
+using System.Collections.Generic;
 using System.Net.Http;
+using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using TaskManagementWeb.Data;
 using TaskManagementWeb.Models;
@@ -11,48 +14,73 @@ namespace TaskManagementWeb.Services
     {
         private readonly AppDbContext _db;
         private readonly IConfiguration _config;
+        private readonly IHttpClientFactory _httpClientFactory;
 
-        public AccountService(AppDbContext db, IConfiguration config)
+        public AccountService(AppDbContext db, IConfiguration config, IHttpClientFactory httpClientFactory)
         {
             _db = db;
             _config = config;
+            _httpClientFactory = httpClientFactory;
         }
 
-        public Users ValidateUser(string username, string password)
+        public async Task<Users> ValidateUserAsync(string username, string password, CancellationToken cancellationToken)
         {
-            return _db.Users.FirstOrDefault(u => u.Username == username && u.Password == password);
+            return await _db.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.Username == username && u.Password == password, cancellationToken);
         }
 
-        public async Task<bool> VerifyCaptcha(string captchaResponse)
+        public async Task<bool> VerifyCaptchaAsync(string captchaResponse, CancellationToken cancellationToken)
         {
             if (string.IsNullOrEmpty(captchaResponse))
             {
                 return false;
             }
 
-            string secretKey = _config["Recaptcha:SecretKey"];
+            try
+            {
+                var client = _httpClientFactory.CreateClient();
 
-            var client = new HttpClient();
-            string url = "https://www.google.com/recaptcha/api/siteverify?secret=" + secretKey + "&response=" + captchaResponse;
+                var formData = new Dictionary<string, string>
+                {
+                    { "secret", _config["Recaptcha:SecretKey"] },
+                    { "response", captchaResponse }
+                };
 
-            var result = await client.GetStringAsync(url);
+                var response = await client.PostAsync(
+                    "https://www.google.com/recaptcha/api/siteverify",
+                    new FormUrlEncodedContent(formData),
+                    cancellationToken);
 
-            return result.Contains("\"success\": true") || result.Contains("\"success\":true");
+                string json = await response.Content.ReadAsStringAsync(cancellationToken);
+
+                using var document = JsonDocument.Parse(json);
+
+                return document.RootElement.TryGetProperty("success", out var success)
+                    && success.ValueKind == JsonValueKind.True;
+            }
+            catch (HttpRequestException)
+            {
+                // مثلاً اینترنت قطعه
+                return false;
+            }
         }
 
-        public Users GetOrCreateGoogleUser(string email, string name)
+        public async Task<Users> GetOrCreateGoogleUserAsync(string email, string name, CancellationToken cancellationToken)
         {
-            var user = _db.Users.FirstOrDefault(u => u.Username == email);
+            var user = await _db.Users.FirstOrDefaultAsync(u => u.Username == email, cancellationToken);
 
             if (user == null)
             {
-                user = new Users();
-                user.Name = name;
-                user.Username = email;
-                user.Password = "GOOGLE_LOGIN";
+                user = new Users
+                {
+                    Name = name,
+                    Username = email,
+                    Password = "GOOGLE_LOGIN"
+                };
 
                 _db.Users.Add(user);
-                _db.SaveChanges();
+                await _db.SaveChangesAsync(cancellationToken);
             }
 
             return user;

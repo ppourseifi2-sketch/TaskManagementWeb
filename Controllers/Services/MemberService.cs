@@ -1,5 +1,7 @@
-using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using TaskManagementWeb.Data;
 using TaskManagementWeb.Models;
 
@@ -7,6 +9,8 @@ namespace TaskManagementWeb.Services
 {
     public class MemberService : IMemberService
     {
+        private static readonly string[] ValidRoles = { "Member", "Admin", "Owner" };
+
         private readonly AppDbContext _db;
 
         public MemberService(AppDbContext db)
@@ -14,116 +18,124 @@ namespace TaskManagementWeb.Services
             _db = db;
         }
 
-        public MembersIndexViewModel GetMembersIndex(int projectId, int userId)
+        public async Task<MembersIndexViewModel> GetMembersIndexAsync(int projectId, int userId, CancellationToken cancellationToken)
         {
-            var myMembership = _db.ProjectMembers.FirstOrDefault(m => m.ProjectId == projectId && m.UserId == userId);
+            string role = await RoleHelper.GetRoleAsync(_db, projectId, userId, cancellationToken);
 
-            if (myMembership == null || myMembership.Role != "Owner")
+            if (!RoleHelper.IsOwner(role))
             {
                 return null;
             }
 
-            var allMembers = _db.ProjectMembers.Where(m => m.ProjectId == projectId).ToList();
-            var rows = new List<MemberRow>();
+            var members = await (from m in _db.ProjectMembers
+                                 join u in _db.Users on m.UserId equals u.Id
+                                 where m.ProjectId == projectId
+                                 select new MemberRow
+                                 {
+                                     MemberId = m.Id,
+                                     UserName = u.Name,
+                                     Role = m.Role
+                                 }).ToListAsync(cancellationToken);
 
-            foreach (var m in allMembers)
+            var viewModel = new MembersIndexViewModel
             {
-                var user = _db.Users.Find(m.UserId);
-
-                var row = new MemberRow();
-                row.MemberId = m.Id;
-                row.UserName = user.Name;
-                row.Role = m.Role;
-
-                rows.Add(row);
-            }
-
-            var viewModel = new MembersIndexViewModel();
-            viewModel.ProjectId = projectId;
-            viewModel.Members = rows;
+                ProjectId = projectId,
+                Members = members
+            };
 
             return viewModel;
         }
 
-        public void ChangeRole(int projectId, int memberId, int userId, string newRole)
+        public async Task ChangeRoleAsync(int projectId, int memberId, int userId, string newRole, CancellationToken cancellationToken)
         {
-            var myMembership = _db.ProjectMembers.FirstOrDefault(m => m.ProjectId == projectId && m.UserId == userId);
+            string role = await RoleHelper.GetRoleAsync(_db, projectId, userId, cancellationToken);
 
-            if (myMembership == null || myMembership.Role != "Owner")
+            if (!RoleHelper.IsOwner(role) || !ValidRoles.Contains(newRole))
             {
                 return;
             }
 
-            var member = _db.ProjectMembers.Find(memberId);
+            var member = await _db.ProjectMembers.FirstOrDefaultAsync(m => m.Id == memberId && m.ProjectId == projectId, cancellationToken);
+
+            if (member == null)
+            {
+                return;
+            }
+
             member.Role = newRole;
-            _db.SaveChanges();
+            await _db.SaveChangesAsync(cancellationToken);
         }
 
-        public void RemoveMember(int projectId, int memberId, int userId)
+        public async Task RemoveMemberAsync(int projectId, int memberId, int userId, CancellationToken cancellationToken)
         {
-            var myMembership = _db.ProjectMembers.FirstOrDefault(m => m.ProjectId == projectId && m.UserId == userId);
+            string role = await RoleHelper.GetRoleAsync(_db, projectId, userId, cancellationToken);
 
-            if (myMembership == null || myMembership.Role != "Owner")
+            if (!RoleHelper.IsOwner(role))
             {
                 return;
             }
 
-            var member = _db.ProjectMembers.Find(memberId);
+            var member = await _db.ProjectMembers.FirstOrDefaultAsync(m => m.Id == memberId && m.ProjectId == projectId, cancellationToken);
+
+            if (member == null)
+            {
+                return;
+            }
+
             _db.ProjectMembers.Remove(member);
-            _db.SaveChanges();
+            await _db.SaveChangesAsync(cancellationToken);
         }
 
-        public MembersAddViewModel GetMembersAdd(int projectId, int userId)
+        public async Task<MembersAddViewModel> GetMembersAddAsync(int projectId, int userId, CancellationToken cancellationToken)
         {
-            var myMembership = _db.ProjectMembers.FirstOrDefault(m => m.ProjectId == projectId && m.UserId == userId);
+            string role = await RoleHelper.GetRoleAsync(_db, projectId, userId, cancellationToken);
 
-            if (myMembership == null || myMembership.Role != "Owner")
+            if (!RoleHelper.IsOwner(role))
             {
                 return null;
             }
 
-            var existingMembers = _db.ProjectMembers.Where(m => m.ProjectId == projectId).ToList();
-            var existingUserIds = new List<int>();
+            // کاربرهایی که هنوز عضو این پروژه نیستن (یه کوئری)
+            var availableUsers = await _db.Users
+                .Where(u => !_db.ProjectMembers.Any(m => m.ProjectId == projectId && m.UserId == u.Id))
+                .AsNoTracking()
+                .ToListAsync(cancellationToken);
 
-            foreach (var m in existingMembers)
+            var viewModel = new MembersAddViewModel
             {
-                existingUserIds.Add(m.UserId);
-            }
-
-            var allUsers = _db.Users.ToList();
-            var availableUsers = new List<Users>();
-
-            foreach (var u in allUsers)
-            {
-                if (!existingUserIds.Contains(u.Id))
-                {
-                    availableUsers.Add(u);
-                }
-            }
-
-            var viewModel = new MembersAddViewModel();
-            viewModel.ProjectId = projectId;
-            viewModel.AvailableUsers = availableUsers;
+                ProjectId = projectId,
+                AvailableUsers = availableUsers
+            };
 
             return viewModel;
         }
 
-        public void AddMember(int projectId, int currentUserId, int newUserId, string role)
+        public async Task AddMemberAsync(int projectId, int currentUserId, int newUserId, string role, CancellationToken cancellationToken)
         {
-            var myMembership = _db.ProjectMembers.FirstOrDefault(m => m.ProjectId == projectId && m.UserId == currentUserId);
+            string myRole = await RoleHelper.GetRoleAsync(_db, projectId, currentUserId, cancellationToken);
 
-            if (myMembership == null || myMembership.Role != "Owner")
+            if (!RoleHelper.IsOwner(myRole) || !ValidRoles.Contains(role))
             {
                 return;
             }
 
-            var newMember = new ProjectMember();
-            newMember.ProjectId = projectId;
-            newMember.UserId = newUserId;
-            newMember.Role = role;
+            bool alreadyMember = await _db.ProjectMembers
+                .AnyAsync(m => m.ProjectId == projectId && m.UserId == newUserId, cancellationToken);
+
+            if (alreadyMember)
+            {
+                return;
+            }
+
+            var newMember = new ProjectMember
+            {
+                ProjectId = projectId,
+                UserId = newUserId,
+                Role = role
+            };
 
             _db.ProjectMembers.Add(newMember);
-            _db.SaveChanges();
+            await _db.SaveChangesAsync(cancellationToken);
         }
     }
 }

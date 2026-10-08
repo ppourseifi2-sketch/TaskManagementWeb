@@ -1,3 +1,4 @@
+using System.Threading;
 using System.Threading.Tasks;
 using TaskManagementWeb.Models;
 
@@ -5,8 +6,8 @@ namespace TaskManagementWeb.Services
 {
     public interface IAccountService
     {
-        Users ValidateUser(string username, string password);
-        Task<bool> VerifyCaptcha(string captchaResponse);
-        Users GetOrCreateGoogleUser(string email, string name);
+        Task<Users> ValidateUserAsync(string username, string password, CancellationToken cancellationToken);
+        Task<bool> VerifyCaptchaAsync(string captchaResponse, CancellationToken cancellationToken);
+        Task<Users> GetOrCreateGoogleUserAsync(string email, string name, CancellationToken cancellationToken);
     }
 }

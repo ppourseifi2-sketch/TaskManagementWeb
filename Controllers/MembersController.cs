@@ -1,4 +1,6 @@
 using System.Security.Claims;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TaskManagementWeb.Services;
@@ -15,11 +17,11 @@ namespace TaskManagementWeb.Controllers
             _memberService = memberService;
         }
 
-        public IActionResult Index(int id)
+        public async Task<IActionResult> Index(int id, CancellationToken cancellationToken)
         {
             int userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
 
-            var viewModel = _memberService.GetMembersIndex(id, userId);
+            var viewModel = await _memberService.GetMembersIndexAsync(id, userId, cancellationToken);
 
             if (viewModel == null)
             {
@@ -30,30 +32,30 @@ namespace TaskManagementWeb.Controllers
         }
 
         [HttpPost]
-        public IActionResult ChangeRole(int projectId, int memberId, string newRole)
+        public async Task<IActionResult> ChangeRole(int projectId, int memberId, string newRole, CancellationToken cancellationToken)
         {
             int userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
 
-            _memberService.ChangeRole(projectId, memberId, userId, newRole);
+            await _memberService.ChangeRoleAsync(projectId, memberId, userId, newRole, cancellationToken);
 
             return RedirectToAction("Index", new { id = projectId });
         }
 
         [HttpPost]
-        public IActionResult Remove(int projectId, int memberId)
+        public async Task<IActionResult> Remove(int projectId, int memberId, CancellationToken cancellationToken)
         {
             int userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
 
-            _memberService.RemoveMember(projectId, memberId, userId);
+            await _memberService.RemoveMemberAsync(projectId, memberId, userId, cancellationToken);
 
             return RedirectToAction("Index", new { id = projectId });
         }
 
-        public IActionResult Add(int id)
+        public async Task<IActionResult> Add(int id, CancellationToken cancellationToken)
         {
             int userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
 
-            var viewModel = _memberService.GetMembersAdd(id, userId);
+            var viewModel = await _memberService.GetMembersAddAsync(id, userId, cancellationToken);
 
             if (viewModel == null)
             {
@@ -64,11 +66,11 @@ namespace TaskManagementWeb.Controllers
         }
 
         [HttpPost]
-        public IActionResult Add(int projectId, int userId, string role)
+        public async Task<IActionResult> Add(int projectId, int userId, string role, CancellationToken cancellationToken)
         {
             int currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
 
-            _memberService.AddMember(projectId, currentUserId, userId, role);
+            await _memberService.AddMemberAsync(projectId, currentUserId, userId, role, cancellationToken);
 
             return RedirectToAction("Index", new { id = projectId });
         }

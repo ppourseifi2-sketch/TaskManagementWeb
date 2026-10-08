@@ -1,5 +1,9 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using TaskManagementWeb.Data;
 using TaskManagementWeb.Models;
 
@@ -14,74 +18,109 @@ namespace TaskManagementWeb.Services
             _db = db;
         }
 
-        public List<ProjectRow> GetMyProjects(int userId)
+        public async Task<List<ProjectRow>> GetMyProjectsAsync(int userId, CancellationToken cancellationToken)
         {
-            var memberships = _db.ProjectMembers.Where(m => m.UserId == userId).ToList();
-
-            var rows = new List<ProjectRow>();
-
-            foreach (var m in memberships)
-            {
-                var project = _db.Projects.Find(m.ProjectId);
-
-                var row = new ProjectRow();
-                row.Id = project.Id;
-                row.Title = project.Title;
-                row.Description = project.Description;
-                row.Role = m.Role;
-
-                rows.Add(row);
-            }
-
-            return rows;
+            return await (from m in _db.ProjectMembers
+                          join p in _db.Projects on m.ProjectId equals p.Id
+                          where m.UserId == userId
+                          select new ProjectRow
+                          {
+                              Id = p.Id,
+                              Title = p.Title,
+                              Description = p.Description,
+                              Role = m.Role
+                          }).ToListAsync(cancellationToken);
         }
 
-        public void CreateProject(string title, string description, int ownerId)
+        public async Task CreateProjectAsync(string title, string description, int ownerId, CancellationToken cancellationToken)
         {
-            var project = new Projects();
-            project.Title = title;
-            project.Description = description;
-            project.OwnerId = ownerId;
-            project.CreatedAt = System.DateTime.Now;
+            // Transaction: یا هر دو کار انجام می‌شه یا هیچ‌کدوم
+            using var transaction = await _db.Database.BeginTransactionAsync(cancellationToken);
+
+            var project = new Projects
+            {
+                Title = title,
+                Description = description,
+                OwnerId = ownerId,
+                CreatedAt = DateTime.Now
+            };
 
             _db.Projects.Add(project);
-            _db.SaveChanges();
+            await _db.SaveChangesAsync(cancellationToken);
 
-            var membership = new ProjectMember();
-            membership.ProjectId = project.Id;
-            membership.UserId = ownerId;
-            membership.Role = "Owner";
+            var membership = new ProjectMember
+            {
+                ProjectId = project.Id,
+                UserId = ownerId,
+                Role = "Owner"
+            };
 
             _db.ProjectMembers.Add(membership);
-            _db.SaveChanges();
+            await _db.SaveChangesAsync(cancellationToken);
+
+            await transaction.CommitAsync(cancellationToken);
         }
 
-        public Projects GetProjectForEdit(int projectId, int userId)
+        public async Task<Projects> GetProjectForEditAsync(int projectId, int userId, CancellationToken cancellationToken)
         {
-            var membership = _db.ProjectMembers.FirstOrDefault(m => m.ProjectId == projectId && m.UserId == userId);
+            string role = await RoleHelper.GetRoleAsync(_db, projectId, userId, cancellationToken);
 
-            if (membership == null || membership.Role != "Owner")
+            if (!RoleHelper.IsOwner(role))
             {
                 return null;
             }
 
-            return _db.Projects.Find(projectId);
+            return await _db.Projects
+                .AsNoTracking()
+                .FirstOrDefaultAsync(p => p.Id == projectId, cancellationToken);
         }
 
-        public void UpdateProject(int projectId, int userId, string title, string description)
+        public async Task UpdateProjectAsync(int projectId, int userId, string title, string description, CancellationToken cancellationToken)
         {
-            var membership = _db.ProjectMembers.FirstOrDefault(m => m.ProjectId == projectId && m.UserId == userId);
+            string role = await RoleHelper.GetRoleAsync(_db, projectId, userId, cancellationToken);
 
-            if (membership == null || membership.Role != "Owner")
+            if (!RoleHelper.IsOwner(role))
             {
                 return;
             }
 
-            var project = _db.Projects.Find(projectId);
+            var project = await _db.Projects.FirstOrDefaultAsync(p => p.Id == projectId, cancellationToken);
+
+            if (project == null)
+            {
+                return;
+            }
+
             project.Title = title;
             project.Description = description;
 
-            _db.SaveChanges();
+            await _db.SaveChangesAsync(cancellationToken);
         }
+        public async Task DeleteProjectAsync(int projectId, int userId, CancellationToken cancellationToken)
+{
+    string role = await RoleHelper.GetRoleAsync(_db, projectId, userId, cancellationToken);
+
+    if (!RoleHelper.IsOwner(role))
+    {
+        return;
+    }
+
+    var project = await _db.Projects.FirstOrDefaultAsync(p => p.Id == projectId, cancellationToken);
+
+    if (project == null)
+    {
+        return;
+    }
+
+    var tasks = await _db.Tasks.Where(t => t.ProjectId == projectId).ToListAsync(cancellationToken);
+    var members = await _db.ProjectMembers.Where(m => m.ProjectId == projectId).ToListAsync(cancellationToken);
+
+    _db.Tasks.RemoveRange(tasks);
+    _db.ProjectMembers.RemoveRange(members);
+    _db.Projects.Remove(project);
+
+    // یه SaveChanges: یا همه‌ی حذف‌ها انجام می‌شه یا هیچ‌کدوم
+    await _db.SaveChangesAsync(cancellationToken);
+}
     }
 }

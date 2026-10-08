@@ -1,3 +1,6 @@
+using System.Security.Claims;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TaskManagementWeb.Services;
@@ -14,11 +17,11 @@ namespace TaskManagementWeb.Controllers
             _projectService = projectService;
         }
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index(CancellationToken cancellationToken)
         {
-            int userId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier).Value);
+            int userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
 
-            var rows = _projectService.GetMyProjects(userId);
+            var rows = await _projectService.GetMyProjectsAsync(userId, cancellationToken);
 
             return View(rows);
         }
@@ -29,20 +32,20 @@ namespace TaskManagementWeb.Controllers
         }
 
         [HttpPost]
-        public IActionResult Create(string title, string description)
+        public async Task<IActionResult> Create(string title, string description, CancellationToken cancellationToken)
         {
-            int userId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier).Value);
+            int userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
 
-            _projectService.CreateProject(title, description, userId);
+            await _projectService.CreateProjectAsync(title, description, userId, cancellationToken);
 
             return RedirectToAction("Index");
         }
 
-        public IActionResult Edit(int id)
+        public async Task<IActionResult> Edit(int id, CancellationToken cancellationToken)
         {
-            int userId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier).Value);
+            int userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
 
-            var project = _projectService.GetProjectForEdit(id, userId);
+            var project = await _projectService.GetProjectForEditAsync(id, userId, cancellationToken);
 
             if (project == null)
             {
@@ -53,13 +56,22 @@ namespace TaskManagementWeb.Controllers
         }
 
         [HttpPost]
-        public IActionResult Edit(int projectId, string title, string description)
+        public async Task<IActionResult> Edit(int projectId, string title, string description, CancellationToken cancellationToken)
         {
-            int userId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier).Value);
+            int userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
 
-            _projectService.UpdateProject(projectId, userId, title, description);
+            await _projectService.UpdateProjectAsync(projectId, userId, title, description, cancellationToken);
 
             return RedirectToAction("Index");
         }
+        [HttpPost]
+public async Task<IActionResult> Delete(int projectId, CancellationToken cancellationToken)
+{
+    int userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+
+    await _projectService.DeleteProjectAsync(projectId, userId, cancellationToken);
+
+    return RedirectToAction("Index");
+}
     }
 }

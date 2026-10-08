@@ -14,6 +14,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     builder.Services.AddScoped<ITaskService, TaskService>();
     builder.Services.AddScoped<IMemberService, MemberService>();
     builder.Services.AddScoped<IAccountService, AccountService>();
+    builder.Services.AddHttpClient();
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>

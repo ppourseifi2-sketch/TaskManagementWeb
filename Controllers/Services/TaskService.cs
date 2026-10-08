@@ -1,5 +1,7 @@
-using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using TaskManagementWeb.Data;
 using TaskManagementWeb.Models;
 
@@ -14,141 +16,153 @@ namespace TaskManagementWeb.Services
             _db = db;
         }
 
-        public TasksIndexViewModel GetTasksIndex(int projectId, int userId, string statusFilter)
+        public async Task<TasksIndexViewModel> GetTasksIndexAsync(int projectId, int userId, string statusFilter, CancellationToken cancellationToken)
         {
-            var membership = _db.ProjectMembers.FirstOrDefault(m => m.ProjectId == projectId && m.UserId == userId);
+            string role = await RoleHelper.GetRoleAsync(_db, projectId, userId, cancellationToken);
 
-            if (membership == null)
+            if (role == null)
             {
                 return null;
             }
 
-            var project = _db.Projects.Find(projectId);
+            string projectTitle = await _db.Projects
+                .Where(p => p.Id == projectId)
+                .Select(p => p.Title)
+                .FirstOrDefaultAsync(cancellationToken);
 
-            List<ProjectTask> tasks;
+            var tasksQuery = _db.Tasks.Where(t => t.ProjectId == projectId);
 
-            if (string.IsNullOrEmpty(statusFilter))
+            if (!string.IsNullOrEmpty(statusFilter))
             {
-                tasks = _db.Tasks.Where(t => t.ProjectId == projectId).ToList();
-            }
-            else
-            {
-                tasks = _db.Tasks.Where(t => t.ProjectId == projectId && t.Status == statusFilter).ToList();
-            }
-
-            var rows = new List<TaskRow>();
-
-            foreach (var t in tasks)
-            {
-                var row = new TaskRow();
-                row.Id = t.Id;
-                row.Title = t.Title;
-                row.Status = t.Status;
-
-                if (t.AssignedUserId != null)
-                {
-                    var assignedUser = _db.Users.Find(t.AssignedUserId);
-                    row.AssignedUserName = assignedUser.Name;
-                }
-                else
-                {
-                    row.AssignedUserName = "—";
-                }
-
-                rows.Add(row);
+                tasksQuery = tasksQuery.Where(t => t.Status == statusFilter);
             }
 
-            var viewModel = new TasksIndexViewModel();
-            viewModel.ProjectId = projectId;
-            viewModel.ProjectTitle = project.Title;
-            viewModel.MyRole = membership.Role;
-            viewModel.StatusFilter = statusFilter;
-            viewModel.Tasks = rows;
+            // Left Join: تسکی که مسئول نداره هم تو لیست می‌مونه
+            var rows = await (from t in tasksQuery
+                              join u in _db.Users on t.AssignedUserId equals (int?)u.Id into assignedUsers
+                              from assignedUser in assignedUsers.DefaultIfEmpty()
+                              orderby t.Id
+                              select new TaskRow
+                              {
+                                  Id = t.Id,
+                                  Title = t.Title,
+                                  Status = t.Status,
+                                  AssignedUserName = assignedUser == null ? "—" : assignedUser.Name
+                              }).ToListAsync(cancellationToken);
+
+            var viewModel = new TasksIndexViewModel
+            {
+                ProjectId = projectId,
+                ProjectTitle = projectTitle,
+                MyRole = role,
+                StatusFilter = statusFilter,
+                Tasks = rows
+            };
 
             return viewModel;
         }
 
-        public void DeleteTask(int projectId, int taskId, int userId)
+        public async Task DeleteTaskAsync(int projectId, int taskId, int userId, CancellationToken cancellationToken)
         {
-            var membership = _db.ProjectMembers.FirstOrDefault(m => m.ProjectId == projectId && m.UserId == userId);
+            string role = await RoleHelper.GetRoleAsync(_db, projectId, userId, cancellationToken);
 
-            if (membership == null || (membership.Role != "Owner" && membership.Role != "Admin"))
+            if (!RoleHelper.CanEditTasks(role))
             {
                 return;
             }
 
-            var task = _db.Tasks.Find(taskId);
+            // شرط ProjectId باعث می‌شه فقط تسک‌های همین پروژه قابل حذف باشن
+            var task = await _db.Tasks.FirstOrDefaultAsync(t => t.Id == taskId && t.ProjectId == projectId, cancellationToken);
+
+            if (task == null)
+            {
+                return;
+            }
+
             _db.Tasks.Remove(task);
-            _db.SaveChanges();
+            await _db.SaveChangesAsync(cancellationToken);
         }
 
-        public TasksEditViewModel GetTaskForEdit(int projectId, int? taskId, int userId)
+        public async Task<TasksEditViewModel> GetTaskForEditAsync(int projectId, int? taskId, int userId, CancellationToken cancellationToken)
         {
-            var membership = _db.ProjectMembers.FirstOrDefault(m => m.ProjectId == projectId && m.UserId == userId);
+            string role = await RoleHelper.GetRoleAsync(_db, projectId, userId, cancellationToken);
 
-            if (membership == null || (membership.Role != "Owner" && membership.Role != "Admin"))
+            if (!RoleHelper.CanEditTasks(role))
             {
                 return null;
             }
 
-            var memberships = _db.ProjectMembers.Where(m => m.ProjectId == projectId).ToList();
-            var projectUsers = new List<Users>();
-
-            foreach (var m in memberships)
-            {
-                var user = _db.Users.Find(m.UserId);
-                projectUsers.Add(user);
-            }
+            var projectUsers = await (from m in _db.ProjectMembers
+                                      join u in _db.Users on m.UserId equals u.Id
+                                      where m.ProjectId == projectId
+                                      select u).AsNoTracking().ToListAsync(cancellationToken);
 
             ProjectTask task;
 
-            if (taskId != null)
-            {
-                task = _db.Tasks.Find(taskId);
-            }
-            else
+            if (taskId == null)
             {
                 task = new ProjectTask();
             }
+            else
+            {
+                task = await _db.Tasks
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(t => t.Id == taskId.Value && t.ProjectId == projectId, cancellationToken);
 
-            var viewModel = new TasksEditViewModel();
-            viewModel.ProjectId = projectId;
-            viewModel.Task = task;
-            viewModel.ProjectUsers = projectUsers;
+                if (task == null)
+                {
+                    return null;
+                }
+            }
+
+            var viewModel = new TasksEditViewModel
+            {
+                ProjectId = projectId,
+                Task = task,
+                ProjectUsers = projectUsers
+            };
 
             return viewModel;
         }
 
-        public void SaveTask(int projectId, int? taskId, int userId, string title, string description, string status, int? assignedUserId)
+        public async Task SaveTaskAsync(int projectId, int? taskId, int userId, string title, string description, string status, int? assignedUserId, CancellationToken cancellationToken)
         {
-            var membership = _db.ProjectMembers.FirstOrDefault(m => m.ProjectId == projectId && m.UserId == userId);
+            string role = await RoleHelper.GetRoleAsync(_db, projectId, userId, cancellationToken);
 
-            if (membership == null || (membership.Role != "Owner" && membership.Role != "Admin"))
+            if (!RoleHelper.CanEditTasks(role))
             {
                 return;
             }
 
             if (taskId == null)
             {
-                var newTask = new ProjectTask();
-                newTask.Title = title;
-                newTask.Description = description;
-                newTask.Status = status;
-                newTask.ProjectId = projectId;
-                newTask.AssignedUserId = assignedUserId;
+                var newTask = new ProjectTask
+                {
+                    Title = title,
+                    Description = description,
+                    Status = status,
+                    ProjectId = projectId,
+                    AssignedUserId = assignedUserId
+                };
 
                 _db.Tasks.Add(newTask);
             }
             else
             {
-                var task = _db.Tasks.Find(taskId);
+                var task = await _db.Tasks.FirstOrDefaultAsync(t => t.Id == taskId.Value && t.ProjectId == projectId, cancellationToken);
+
+                if (task == null)
+                {
+                    return;
+                }
+
                 task.Title = title;
                 task.Description = description;
                 task.Status = status;
                 task.AssignedUserId = assignedUserId;
             }
 
-            _db.SaveChanges();
+            await _db.SaveChangesAsync(cancellationToken);
         }
     }
 }
