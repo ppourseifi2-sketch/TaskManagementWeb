@@ -11,5 +11,10 @@
     <PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="10.0.12" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.11" />
   </ItemGroup>
-
+  <ItemGroup>
+    <Compile Remove="TaskManagementWeb.Tests/**" />
+    <Content Remove="TaskManagementWeb.Tests/**" />
+    <EmbeddedResource Remove="TaskManagementWeb.Tests/**" />
+    <None Remove="TaskManagementWeb.Tests/**" />
+  </ItemGroup>
 </Project>

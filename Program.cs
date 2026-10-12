@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.EntityFrameworkCore;
 using TaskManagementWeb.Data;
 using TaskManagementWeb.Services;
+using TaskManagementWeb.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -31,6 +32,37 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
     });
 
 var app = builder.Build();
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+    
+    for (int i = 0; i < 10; i++)
+    {
+        try
+        {
+            db.Database.EnsureCreated();
+
+            if (!db.Users.Any())
+            {
+                var admin = new Users();
+                admin.Name = "مدیر سیستم";
+                admin.Username = "admin";
+                admin.Password = "admin123";
+
+                db.Users.Add(admin);
+                db.SaveChanges();
+            }
+
+            break;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Database is not ready yet: " + ex.Message);
+            Thread.Sleep(3000);
+        }
+    }
+}
 
 app.UseStaticFiles();
 

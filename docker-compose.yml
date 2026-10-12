@@ -1,0 +1,25 @@
+services:
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "1434:1433"
+    volumes:
+      - dbdata:/var/opt/mssql
+
+  web:
+    build: .
+    ports:
+      - "5106:8080"
+    depends_on:
+      - db
+    environment:
+      ConnectionStrings__AppDbConnection: "Server=db;Database=TaskManagementDB;User Id=sa;Password=${DB_PASSWORD};TrustServerCertificate=True;"
+      Authentication__Google__ClientId: ${GOOGLE_CLIENT_ID}
+      Authentication__Google__ClientSecret: ${GOOGLE_CLIENT_SECRET}
+      Recaptcha__SecretKey: ${RECAPTCHA_SECRET_KEY}
+
+volumes:
+  dbdata:
